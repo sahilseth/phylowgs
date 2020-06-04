@@ -15,6 +15,8 @@ from scipy.stats.mstats import gmean
 
 VariantId = namedtuple('VariantId', ['CHROM', 'POS'])
 
+# implement a new parser for pcgr
+
 class ReadCountsUnavailableError(Exception):
   pass
 
@@ -144,6 +146,32 @@ class PcawgConsensusParser(VariantParser):
     alt_reads = int(variant.INFO['t_alt_count'][0])
     ref_reads = int(variant.INFO['t_ref_count'][0])
     total_reads = alt_reads + ref_reads
+    # Some variants havezero alt and ref reads.
+    if total_reads == 0:
+      raise ReadCountsUnavailableError()
+    return (ref_reads, total_reads)
+
+class PcgrAnnotatedParser(VariantParser):
+  def __init__(self, vcf_filename, tumor_sample=None):
+    self._vcf_filename = vcf_filename
+    self._tumor_sample = tumor_sample
+
+  # not sure what this is
+  def _find_ref_and_variant_nt(self, variant):
+    assert len(variant.REF) == len(variant.ALT) == 1
+    return (str(variant.REF[0]), str(variant.ALT[0]))
+
+  def _calc_read_counts(self, variant):
+    if not ('TDP' in variant.INFO and 'TAF' in variant.INFO):
+      raise ReadCountsUnavailableError()
+    # no need for this
+    #assert len(variant.INFO['TDP']) == len(variant.INFO['TAF']) == 1
+
+    taf = float(variant.INFO['TAF'])
+    tdp = float(variant.INFO['TDP'])
+    total_reads = tdp
+    alt_reads = int(taf*tdp)
+    ref_reads = int(tdp - alt_reads)
     # Some variants havezero alt and ref reads.
     if total_reads == 0:
       raise ReadCountsUnavailableError()
@@ -1176,6 +1204,8 @@ def parse_variants(samples, vcf_files, vcf_types, tumor_sample, missing_variant_
       variant_parser = PcawgConsensusParser(vcf_fn, tumor_sample)
     elif vcf_type == 'somsnip':
       variant_parser = SomSnipParser(vcf_fn, tumor_sample)
+    elif vcf_type == 'pcgr':
+      variant_parser = PcgrAnnotatedParser(vcf_fn, tumor_sample)      
     else:
       raise Exception('Unknowon variant type: %s' % vcf_type)
 
