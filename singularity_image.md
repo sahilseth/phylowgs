@@ -34,11 +34,11 @@ mkdir -p ${GOPATH}/src/github.com/sylabs && \
   cd ${GOPATH}/src/github.com/sylabs && \
   git clone https://github.com/sylabs/singularity.git && \
   cd singularity
-To build a stable version of Singularity, check out a release tag before compiling:
+# To build a stable version of Singularity, check out a release tag before compiling:
 
 git checkout v3.6.0
-Compiling Singularity
-You can build Singularity using the following commands:
+# Compiling Singularity
+# You can build Singularity using the following commands:
 
 cd ${GOPATH}/src/github.com/sylabs/singularity && \
   ./mconfig && \
